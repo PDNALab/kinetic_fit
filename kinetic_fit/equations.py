@@ -13,12 +13,15 @@ class ParameterFitter:
         - functions (list of callable): The list of functions to fit.
         """
         self.A_ = A_
+        if len(self.A_) > 6:
+            raise ValueError('This algoritm works only upto 5 modifications')
+        n_mods = len(self.A_)
         self.t = t
-        self.functions = [A_0, A_1, A_2, A_3, A_4, A_5]
+        self.functions = [A_0, A_1, A_2, A_3, A_4, A_5][:n_mods]
         self.parms = None
         
         if initial_guess is None:
-            self.initial_guess = [1.2065, 0.7285, 0.5515, 0.9445, 1.0465, 0.1015]
+            self.initial_guess = [1.2065, 0.7285, 0.5515, 0.9445, 1.0465, 0.0][:n_mods]
         else:
             self.initial_guess = initial_guess
 
