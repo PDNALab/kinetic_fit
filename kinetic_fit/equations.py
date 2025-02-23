@@ -10,11 +10,10 @@ class ParameterFitter:
         - A_ (list of arrays): The observed data for each function.
         - t (array): The independent variable values (e.g., time points).
         - initial_guess (list): The initial guess for the shared parameters.
-        - functions (list of callable): The list of functions to fit.
         """
         self.A_ = A_
         if len(self.A_) > 6:
-            raise ValueError('This algoritm works only upto 5 modifications')
+            raise ValueError('This algorithm works only up to 5 modifications')
         n_mods = len(self.A_)
         self.t = t
         self.functions = [A_0, A_1, A_2, A_3, A_4, A_5][:n_mods]
@@ -34,6 +33,8 @@ class ParameterFitter:
             """Calculates the sum of squared residuals for all functions."""
             residuals = []
             for A, func in zip(self.A_, self.functions):
+                # Set the last parameter to 0
+                params[-1] = 0.0
                 residuals.extend(A - func(self.t, *params))
             return np.sum(np.array(residuals)**2)
 
@@ -48,7 +49,6 @@ class ParameterFitter:
         - parms (array): The optimized parameters.
         """
         return self.parms
-
 
 def A_i(t, *k_values):
     """
