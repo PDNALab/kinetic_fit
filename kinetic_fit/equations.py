@@ -44,11 +44,16 @@ class ParameterFitter:
     def get_parameters(self):
         """
         Returns the optimized parameters after fitting.
-        
-        Returns:
-        - parms (array): The optimized parameters.
         """
         return self.parms
+    
+    def get_contour(self):
+        """
+        Returns the 2D array of (mod, time).
+        """
+        t_ = np.arange(0, np.max(self.t), 0.05)
+        print(t_)
+        return np.array([f(t_, *self.parms) for f in [A_0,A_1,A_2,A_3,A_4,A_5]])
 
 def A_i(t, *k_values):
     """
@@ -102,3 +107,28 @@ def A_4(t, k1, k2, k3, k4, k5, k6):
 
 def A_5(t, k1, k2, k3, k4, k5, k6):
     return A_i(t, k1, k2, k3, k4, k5, k6)
+
+
+def smooth_curve(x, y, degree=3):
+    """
+    Fit a smooth curve through the given (x, y) data points.
+
+    Parameters:
+    x (numpy.ndarray): 1D array of x-values
+    y (numpy.ndarray): 1D array of y-values
+    degree (int, optional): The degree of the polynomial to fit. Default is 3.
+
+    Returns:
+    numpy.ndarray, numpy.ndarray: Smoothed x-values, Smoothed y-values
+    """
+    # Fit a polynomial curve to the data
+    coeffs = np.polyfit(x, y, deg=degree)
+    smooth_curve_func = np.poly1d(coeffs)
+
+    # Create a set of smooth x-values
+    x_smooth = np.linspace(x.min(), x.max(), 100)
+
+    # Calculate the corresponding y-values on the smooth curve
+    y_smooth = smooth_curve_func(x_smooth)
+
+    return x_smooth, y_smooth
