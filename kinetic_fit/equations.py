@@ -52,7 +52,6 @@ class ParameterFitter:
         Returns the 2D array of (mod, time).
         """
         t_ = np.arange(0, np.max(self.t), 0.05)
-        print(t_)
         return np.array([f(t_, *self.parms) for f in [A_0,A_1,A_2,A_3,A_4,A_5]])
 
 def A_i(t, *k_values):
