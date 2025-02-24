@@ -34,7 +34,7 @@ class ParameterFitter:
             residuals = []
             for A, func in zip(self.A_, self.functions):
                 # Set the last parameter to 0
-                params[self.n_mods:] = 0.0
+                params[self.n_mods+1:] = 0.0
                 residuals.extend(A - func(self.t, *params))
             return np.sum(np.array(residuals)**2)
 
