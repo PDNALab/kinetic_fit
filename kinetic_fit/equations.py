@@ -12,15 +12,15 @@ class ParameterFitter:
         - initial_guess (list): The initial guess for the shared parameters.
         """
         self.A_ = A_
-        if len(self.A_) > 6:
-            raise ValueError('This algorithm works only up to 5 modifications')
-        n_mods = len(self.A_)
+        if len(self.A_) > 7:
+            raise ValueError('This algorithm works only up to 6 modifications')
+        self.n_mods = len(self.A_)
         self.t = t
-        self.functions = [A_0, A_1, A_2, A_3, A_4, A_5][:n_mods]
+        self.functions = [A_0, A_1, A_2, A_3, A_4, A_5, A_6][:self.n_mods]
         self.parms = None
         
         if initial_guess is None:
-            self.initial_guess = [1.2065, 0.7285, 0.5515, 0.9445, 1.0465, 0.0][:n_mods]
+            self.initial_guess = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         else:
             self.initial_guess = initial_guess
 
@@ -34,7 +34,7 @@ class ParameterFitter:
             residuals = []
             for A, func in zip(self.A_, self.functions):
                 # Set the last parameter to 0
-                params[-1] = 0.0
+                params[self.n_mods:] = 0.0
                 residuals.extend(A - func(self.t, *params))
             return np.sum(np.array(residuals)**2)
 
@@ -52,7 +52,7 @@ class ParameterFitter:
         Returns the 2D array of (mod, time).
         """
         t_ = np.arange(0, np.max(self.t), 0.05)
-        return np.array([f(t_, *self.parms) for f in [A_0,A_1,A_2,A_3,A_4,A_5]])
+        return np.array([f(t_, *self.parms) for f in [A_0,A_1,A_2,A_3,A_4,A_5,A_6]])
 
 def A_i(t, *k_values):
     """
@@ -83,30 +83,32 @@ def A_i(t, *k_values):
         for p in range(i + 1):
             if p != j:
                 denominator *= (k_values[p] - k_values[j])
-        # denominator = 1e-8 if abs(denominator) < 1e-8 else denominator # bypass dividing by zero
+        denominator = 1e-8 if abs(denominator) < 1e-8 else denominator # bypass dividing by zero
         sum_terms += numerator / denominator
 
     return product_k * sum_terms
 
 # Define the functions to fit
-def A_0(t, k1, k2, k3, k4, k5, k6):
+def A_0(t, k1, k2, k3, k4, k5, k6, k7):
     return np.exp(-t * k1)
 
-def A_1(t, k1, k2, k3, k4, k5, k6):
+def A_1(t, k1, k2, k3, k4, k5, k6, k7):
     return A_i(t, k1, k2)
 
-def A_2(t, k1, k2, k3, k4, k5, k6):
+def A_2(t, k1, k2, k3, k4, k5, k6, k7):
     return A_i(t, k1, k2, k3)
 
-def A_3(t, k1, k2, k3, k4, k5, k6):
+def A_3(t, k1, k2, k3, k4, k5, k6, k7):
     return A_i(t, k1, k2, k3, k4)
 
-def A_4(t, k1, k2, k3, k4, k5, k6):
+def A_4(t, k1, k2, k3, k4, k5, k6, k7):
     return A_i(t, k1, k2, k3, k4, k5)
 
-def A_5(t, k1, k2, k3, k4, k5, k6):
+def A_5(t, k1, k2, k3, k4, k5, k6, k7):
     return A_i(t, k1, k2, k3, k4, k5, k6)
 
+def A_6(t, k1, k2, k3, k4, k5, k6, k7):
+    return A_i(t, k1, k2, k3, k4, k5, k6, k7)
 
 def smooth_curve(x, y, degree=3):
     """
