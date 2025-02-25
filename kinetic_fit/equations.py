@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import minimize
+from scipy.optimize import minimize_scalar
 
 class ParameterFitter:
     def __init__(self, A_, t,  initial_guess=None):
@@ -11,18 +12,20 @@ class ParameterFitter:
         - t (array): The independent variable values (e.g., time points).
         - initial_guess (list): The initial guess for the shared parameters.
         """
-        self.A_ = A_
+        self.A_ = [np.array(a, dtype=np.float64) for a in A_]
         if len(self.A_) > 7:
             raise ValueError('This algorithm works only up to 6 modifications')
         self.n_mods = len(self.A_)
-        self.t = t
+        self.t = np.array(t, dtype=np.float64)
         self.functions = [A_0, A_1, A_2, A_3, A_4, A_5, A_6][:self.n_mods]
         self.parms = None
         
         if initial_guess is None:
-            self.initial_guess = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            self.initial_guess = np.array([1.0, 0.9, 0.6, 0.5, 0.4, 0.1, 0.0], dtype=np.float64)
+            self.initial_guess[self.n_mods:] = [0.0] * (len(self.initial_guess) - self.n_mods)
+            # self.initial_guess = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         else:
-            self.initial_guess = initial_guess
+            self.initial_guess = np.array(initial_guess, dtype=np.float64)
 
     def fit(self):
         """
@@ -32,13 +35,15 @@ class ParameterFitter:
         def objective_function(params):
             """Calculates the sum of squared residuals for all functions."""
             residuals = []
+            res_important = [] # summ of all A should be 1 -- normalized
             for A, func in zip(self.A_, self.functions):
-                # Set the last parameter to 0
-                params[self.n_mods+1:] = 0.0
+                params[self.n_mods:] = 0.0
                 residuals.extend(A - func(self.t, *params))
-            return np.sum(np.array(residuals)**2)
+            res_important.extend(np.ones_like(A, dtype=np.float64) - A_all(self.t, *params))
+            return np.sum(np.array(residuals)**2) + np.sum(np.array(res_important)**2)
 
-        result = minimize(objective_function, self.initial_guess)
+        result = minimize(objective_function, self.initial_guess, method='SLSQP', tol=1e-100,
+                          bounds=[(0, 2)] * len(self.initial_guess))
         self.parms = result.x
 
     def get_parameters(self):
@@ -51,8 +56,9 @@ class ParameterFitter:
         """
         Returns the 2D array of (mod, time).
         """
-        t_ = np.arange(0, np.max(self.t), 0.05)
-        return np.array([f(t_, *self.parms) for f in [A_0,A_1,A_2,A_3,A_4,A_5,A_6]])
+        t_ = np.arange(0, np.max(self.t), 0.05, dtype=np.float64)
+        return np.array([f(t_, *self.parms) for f in [A_0, A_1, A_2, A_3, A_4, A_5, A_6]], dtype=np.float64)
+
 
 def A_i(t, *k_values):
     """
@@ -83,7 +89,7 @@ def A_i(t, *k_values):
         for p in range(i + 1):
             if p != j:
                 denominator *= (k_values[p] - k_values[j])
-        denominator = 1e-8 if abs(denominator) < 1e-8 else denominator # bypass dividing by zero
+        denominator = 1e-6 if abs(denominator) < 1e-6 else denominator # bypass dividing by zero
         sum_terms += numerator / denominator
 
     return product_k * sum_terms
@@ -109,6 +115,9 @@ def A_5(t, k1, k2, k3, k4, k5, k6, k7):
 
 def A_6(t, k1, k2, k3, k4, k5, k6, k7):
     return A_i(t, k1, k2, k3, k4, k5, k6, k7)
+
+def A_all(t, k1, k2, k3, k4, k5, k6, k7):
+    return np.exp(-t * k1) + A_i(t, k1, k2) + A_i(t, k1, k2, k3) + A_i(t, k1, k2, k3, k4) + A_i(t, k1, k2, k3, k4, k5) + A_i(t, k1, k2, k3, k4, k5, k6) + A_i(t, k1, k2, k3, k4, k5, k6, k7)
 
 def smooth_curve(x, y, degree=3):
     """
